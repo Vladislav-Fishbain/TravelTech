@@ -1,1 +1,1 @@
-![Process 01 Sequence Diagram](../../../assets/diagrams/01_group_booking.png)
+![Process 01 Sequence Diagram](/assets/diagrams/01_group_booking.png)

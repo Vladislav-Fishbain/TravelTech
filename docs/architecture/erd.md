@@ -1,1 +1,1 @@
-![Entity Relationship Diagram](../../assets/diagrams/erd.png)
+![Entity Relationship Diagram](/assets/diagrams/erd.png)
