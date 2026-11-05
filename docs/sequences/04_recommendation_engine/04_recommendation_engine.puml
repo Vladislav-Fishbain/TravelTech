@@ -1,0 +1,33 @@
+@startuml
+autonumber
+participant "Очередь Сообщений (Kafka)" as Kafka
+participant "Движок Рекомендаций (Альфред)" as RecEngine
+participant "Валидатор Конфликтов" as Validator
+database "Центральная БД" as DB
+participant "Circuit Breaker" as CB
+participant "Внешний API Поиска" as ExtAPI
+
+Kafka -> RecEngine: Консьюминг FlightStatusChangedEvent
+RecEngine -> Validator: Проверить влияние на маршрут (CheckConflicts)
+Validator -> DB: Запрос всех связанных элементов этой поездки
+DB --> Validator: Список броней
+
+Validator --> RecEngine: Конфликт обнаружен: Стыковка сломана. Требуется замена рейса Y.
+
+RecEngine -> DB: Запрос профилей участников
+DB --> RecEngine: Данные
+
+RecEngine -> CB: ExecuteSearch()
+activate CB
+CB -> ExtAPI: Поиск доступных рейсов на замену рейса Y
+ExtAPI --> CB: Список доступных вариантов рейсов
+CB --> RecEngine: Сырые варианты альтернатив
+deactivate CB
+
+loop
+    note over RecEngine: Скоринг и Фильтрация:\n1. Визы\n2. Багаж\n3. Время отеля\n4. Предпочтения.
+end
+
+RecEngine -> DB: INSERT INTO alternative_options
+RecEngine -> Kafka: Произвести событие MitigationOptionsReadyEvent
+@enduml

@@ -1,0 +1,1 @@
+![Process 02 Sequence Diagram](../../../assets/diagrams/02_offline_sync.png)

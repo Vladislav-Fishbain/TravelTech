@@ -1,0 +1,29 @@
+@startuml
+autonumber
+
+box "Источники Изменений Расписания" #LightBlue
+participant "Внешний API Статусов" as ExtAPI
+actor "Авиакомпания (Рассылка)" as AirMail
+end box
+
+participant "Внешний Шлюз Почты" as MailGW
+participant "Email-Парсер (Worker)" as MailParser
+participant "Flight Tracker (Cron)" as Tracker
+database "Центральная БД" as DB
+participant "Очередь Сообщений (Kafka)" as Kafka
+
+loop Каждые 15 минут
+    Tracker -> DB: Найти активные рейсы на ближайшие 36 часов
+    DB --> Tracker: Список номеров рейсов и Trip IDs
+    Tracker -> ExtAPI: Запрос текущего статуса рейса (GetFlightStatus)
+    ExtAPI --> Tracker: Статус: Задержка 4 часа
+    Tracker -> Kafka: Произвести событие FlightStatusChangedEvent (API Source)
+end
+
+AirMail -> MailGW: Отправка Email
+MailGW -> MailParser: Перенаправление сырого письма
+MailParser -> Kafka: Произвести событие FlightStatusChangedEvent (Email Source)
+
+Kafka -> Kafka: Консьюминг событий, дедупликация изменений
+Kafka -> DB: UPDATE itinerary_items SET status='delayed'
+@enduml

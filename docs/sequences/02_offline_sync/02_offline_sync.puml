@@ -1,0 +1,34 @@
+@startuml
+autonumber
+actor "Пользователь (в оффлайне)" as User
+participant "Локальная БД (SQLite)" as LocalDB
+participant "Мобильное Приложение" as App
+participant "API Gateway" as GW
+participant "Сервис Маршрутов" as TripService
+database "Центральная БД" as DB
+
+User -> App: Просмотр плана путешествия
+App -> LocalDB: Чтение сохраненного кэша маршрута
+LocalDB --> App: Данные плана
+App --> User: Отображение маршрута
+
+User -> App: Добавить локальную активность
+App -> LocalDB: Сохранить в кэш изменений (itinerary_item)
+App --> User: Отображение: "Добавлено (ожидает синхронизации)"
+
+User -> App: Появился доступ к сети
+App -> GW: POST /api/v1/trips/sync
+GW -> TripService: SyncUserChanges(tripId, itemsChangeList)
+
+loop
+    TripService -> TripService: Валидация пересечений времени и тайм-зон
+    TripService -> DB: Идемпотентный INSERT/UPDATE в itinerary_items
+end
+
+TripService -> DB: Получить финальный актуальный план
+DB --> TripService: Актуальный JSON плана
+TripService --> GW: Синхронизация завершена успешно
+GW --> App: Ответ 200 OK + Актуальный JSON
+App -> LocalDB: Обновление локального кэша
+App --> User: Индикатор: "Маршрут синхронизирован с группой"
+@enduml

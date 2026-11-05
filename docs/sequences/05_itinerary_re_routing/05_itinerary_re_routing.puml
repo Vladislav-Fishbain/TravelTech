@@ -1,0 +1,35 @@
+@startuml
+autonumber
+participant "Очередь Сообщений (Kafka)" as Kafka
+participant "Сервис Уведомлений" as NotifService
+participant "Push Шлюз (FCM/APNS)" as Push
+actor "Пользователь (Owner)" as User
+participant "Мобильное Приложение" as App
+participant "Сервис Маршрутов" as TripService
+participant "Внешний API (GDS)" as ExtAPI
+database "Центральная БД" as DB
+
+Kafka -> NotifService: Консьюминг MitigationOptionsReadyEvent
+NotifService -> DB: Сохранение пуша в таблицу notifications
+NotifService -> Push: Отправить Push Payload
+Push -> App: Доставка пуш-пакета на устройство
+App -> DB: Обновление статуса пуша на 'delivered'
+
+User -> App: Клик по алерту о задержке
+App --> User: Отображение экрана выбора альтернатив
+User -> App: Выбирает Вариант №1
+
+App -> TripService: POST /api/v1/trips/apply-alternative
+TripService -> DB: Получить шифрованные паспорта для этой поездки
+DB --> TripService: Encrypted Passport Data
+
+TripService -> ExtAPI: Запрос на автоматический аннулят сломанного рейса
+ExtAPI --> TripService: Статус: Отменено
+TripService -> ExtAPI: Бронирование выбранной альтернативы
+ExtAPI --> TripService: Успешно. Новый PNR сформирован.
+
+TripService -> DB: Выполнить транзакцию обновления itinerary_items
+TripService -> Kafka: Произвести событие TripPlanUpdatedEvent
+TripService --> App: Ответ: Маршрут успешно изменен
+App --> User: Экран: "Ваш общий план поездки успешно обновлен!"
+@enduml

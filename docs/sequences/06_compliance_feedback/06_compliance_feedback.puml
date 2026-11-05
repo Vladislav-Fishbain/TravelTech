@@ -1,0 +1,25 @@
+@startuml
+autonumber
+participant "Комплаенс-Воркер (Cron)" as Cron
+database "База Данных" as DB
+participant "Сервис Уведомлений" as NotifService
+actor "Пользователь" as User
+participant "Мобильное Приложение" as App
+
+loop Раз в сутки
+    Cron -> DB: Найти поездки, завершившиеся более 24 часов назад
+    DB --> Cron: Список Trip IDs
+    
+    Cron -> DB: DELETE FROM passport_data WHERE trip_id = X
+    Cron -> DB: UPDATE trips SET status = 'completed'
+    Cron --> Cron: Лог успешной очистки
+end
+
+Cron -> NotifService: TriggerFeedbackSurvey(UserId, TripId)
+NotifService -> App: Push: "Как прошло ваше путешествие?"
+User -> App: Открытие формы оценки рекомендаций
+User -> App: Сабмит формы
+App -> NotifService: POST /api/v1/feedback
+NotifService -> DB: Сохранение фидбека в профиль
+NotifService --> App: Экран: "Спасибо!"
+@enduml

@@ -1,0 +1,46 @@
+@startuml
+autonumber
+skinparam BoxPadding 10
+
+actor "Пользователь (Owner)" as User1
+actor "Участник (Editor)" as User2
+participant "Мобильное Приложение" as App
+participant "API Gateway" as GW
+participant "Сервис Бронирования" as Booking
+participant "Circuit Breaker" as CB
+participant "Внешний API (Amadeus/GDS)" as ExtAPI
+participant "Сервис Платежей" as Payment
+database "База Данных" as DB
+
+User1 -> App: Поиск билетов и отелей
+App -> GW: GET /api/v1/search?params
+GW -> Booking: Search(params)
+Booking -> CB: ExecuteRequest()
+activate CB
+CB -> ExtAPI: Запрос цен и доступности мест
+ExtAPI --> CB: Данные о рейсах/отелях
+CB --> Booking: Результат
+deactivate CB
+Booking --> App: Отображение результатов
+User1 -> App: Создать поездку и пригласить User2 (email)
+App -> GW: POST /api/v1/trips
+GW -> DB: Запись в trips и trip_members
+
+User1 -> App: Выбор билета, ввод паспортных данных
+App -> GW: POST /api/v1/bookings
+GW -> Booking: CreatePendingBooking(tripId, passportData)
+Booking -> DB: INSERT INTO passport_data & itinerary_items
+Booking -> Payment: Инициация платежной сессии
+Payment --> Booking: Ссылка на оплату
+Booking --> App: Открыть шлюз оплаты
+
+User1 -> Payment: Оплата успешно проведена
+Payment -> Booking: Webhook: PaymentSuccess
+Booking -> CB: ExecuteRequest
+activate CB
+CB -> ExtAPI: Подтвердить бронирование (Issue Ticket)
+ExtAPI --> CB: Успешно
+deactivate CB
+Booking -> DB: UPDATE itinerary_items SET status='confirmed'
+Booking --> App: Экран "Готово!"
+@enduml
