@@ -1,1 +1,1 @@
-![Entity Relationship Diagram](/assets/diagrams/erd.png)
+<img src="/assets/diagrams/erd.png" alt="Entity Relationship Diagram">
