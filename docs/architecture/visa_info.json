@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "required": ["citizenship", "active_visas"],
+  "properties": {
+    "citizenship": { "type": "string", "length": 3 },
+    "active_visas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "country_issued", "valid_until"],
+        "properties": {
+          "type": { "type": "string" },
+          "country_issued": { "type": "string", "length": 3 },
+          "valid_from": { "type": "string", "format": "date" },
+          "valid_until": { "type": "string", "format": "date" },
+          "entries": { "type": "string", "enum": ["SINGLE", "DOUBLE", "MULT"] }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "citizenship": "RUS",
+      "active_visas": [
+        {
+          "type": "Schengen",
+          "country_issued": "FRA",
+          "valid_from": "2026-01-01",
+          "valid_until": "2027-12-31",
+          "entries": "MULT"
+        }
+      ]
+    }
+  ]
+}

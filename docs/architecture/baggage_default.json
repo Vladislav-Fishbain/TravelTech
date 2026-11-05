@@ -1,0 +1,48 @@
+{
+  "type": "object",
+  "required": ["cabin_bags", "checked_bags"],
+  "properties": {
+    "cabin_bags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["count", "max_weight_kg", "max_dimensions_cm"],
+        "properties": {
+          "count": { "type": "integer" },
+          "max_weight_kg": { "type": "number" },
+          "max_dimensions_cm": { "type": "string" }
+        }
+      }
+    },
+    "checked_bags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["count", "max_weight_kg", "max_dimensions_cm"],
+        "properties": {
+          "count": { "type": "integer" },
+          "max_weight_kg": { "type": "number" },
+          "max_dimensions_cm": { "type": "string" }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "cabin_bags": [
+        {
+          "count": 1,
+          "max_weight_kg": 10,
+          "max_dimensions_cm": "55x40x20"
+        }
+      ],
+      "checked_bags": [
+        {
+          "count": 1,
+          "max_weight_kg": 23,
+          "max_dimensions_cm": "158"
+        }
+      ]
+    }
+  ]
+}

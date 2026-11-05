@@ -1,0 +1,50 @@
+{
+  "type": "object",
+  "required": ["carrier_code", "flight_number", "departure", "arrival", "baggage_included", "visa_required", "additional_fare_usd"],
+  "properties": {
+    "carrier_code": { "type": "string" },
+    "flight_number": { "type": "string" },
+    "departure": {
+      "type": "object",
+      "required": ["airport", "time_utc"],
+      "properties": {
+        "airport": { "type": "string" },
+        "terminal": { "type": "string" },
+        "time_utc": { "type": "string", "format": "date-time" }
+      }
+    },
+    "arrival": {
+      "type": "object",
+      "required": ["airport", "time_utc"],
+      "properties": {
+        "airport": { "type": "string" },
+        "terminal": { "type": "string" },
+        "time_utc": { "type": "string", "format": "date-time" }
+      }
+    },
+    "baggage_included": { "type": "boolean" },
+    "visa_required": { "type": "boolean" },
+    "additional_fare_usd": { "type": "number" },
+    "mitigation_reason": { "type": "string" }
+  },
+  "examples": [
+    {
+      "carrier_code": "TK",
+      "flight_number": "TK1822",
+      "departure": {
+        "airport": "IST",
+        "terminal": "1",
+        "time_utc": "2026-08-15T14:20:00Z"
+      },
+      "arrival": {
+        "airport": "CDG",
+        "terminal": "2F",
+        "time_utc": "2026-08-15T17:55:00Z"
+      },
+      "baggage_included": true,
+      "visa_required": false,
+      "additional_fare_usd": 0.00,
+      "mitigation_reason": "Автоматическая перестройка сломанной стыковки"
+    }
+  ]
+}
