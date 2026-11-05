@@ -1,0 +1,122 @@
+openapi: 3.0.3
+info:
+  title: TravelTech Engine ("Alfred") API Specification
+  version: 1.0.0
+servers:
+  - url: https://alfredroutes.com
+paths:
+  /trips/{trip_id}/sync:
+    post:
+      operationId: syncOfflineChanges
+      parameters:
+        - name: trip_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [client_sync_timestamp, device_id, offline_created_items]
+              properties:
+                client_sync_timestamp:
+                  type: string
+                  format: date-time
+                device_id:
+                  type: string
+                offline_created_items:
+                  type: array
+                  items:
+                    $ref: './api_schemas.json#/definitions/OfflineCreatedItem'
+            examples:
+              StandardSyncRequest:
+                value:
+                  client_sync_timestamp: "2026-08-15T10:14:22Z"
+                  device_id: "iPhone14_Pro"
+                  offline_created_items:
+                    - client_generated_uuid: "e8b34c21-7299-4d6d-b8d9-fa936a7114b3"
+                      type: "activity"
+                      title: "Louvre Museum Guided Tour"
+                      start_time: "2026-08-16T09:00:00Z"
+                      end_time: "2026-08-16T12:00:00Z"
+                      timezone: "Europe/Paris"
+                      metadata:
+                        provider: "LocalGuide"
+                        price_eur: 150.00
+      responses:
+        '200':
+          description: Sync successful
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                SyncSuccessResponse:
+                  value:
+                    status: "synchronized"
+                    server_timestamp: "2026-08-15T10:15:00Z"
+        '401':
+          description: Unauthorized
+
+  /trips/{trip_id}/apply-alternative:
+    post:
+      operationId: applyAlternativeRoute
+      parameters:
+        - name: trip_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [broken_itinerary_item_id, selected_option_id, apply_for_all_group_members]
+              properties:
+                broken_itinerary_item_id:
+                  type: integer
+                selected_option_id:
+                  type: integer
+                apply_for_all_group_members:
+                  type: boolean
+            examples:
+              ApplyAlternativeRequest:
+                value:
+                  broken_itinerary_item_id: 14205
+                  selected_option_id: 981
+                  apply_for_all_group_members: true
+      responses:
+        '200':
+          description: Alternative route applied successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  updated_trip_status:
+                    type: string
+              examples:
+                ApplyAlternativeSuccess:
+                  value:
+                    status: "success"
+                    message: "Itinerary rebuilt successfully. New PNR generated: TXK982"
+                    updated_trip_status: "active"
+        '422':
+          description: Unprocessable Entity
+security:
+  - BearerAuth: []
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
