@@ -1,0 +1,36 @@
+@startuml
+!pragma layout smetana
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam ranksep 40
+
+title C4 Component Diagram - Event-Driven Architecture
+
+package "Шина Событий (Kafka)" {
+    [FlightStatusChangedEvent] as EvFlight
+    [MitigationOptionsReadyEvent] as EvMitigation
+    [TripPlanUpdatedEvent] as EvTripUpdated
+}
+
+package "Асинхронные Сервисы" {
+    component "Движок Рекомендаций\n[RecEngine - Альфред]" as RecEngine #White
+    component "Сервис Уведомлений\n[Notification Service]" as NotifService #White
+    component "Комплаенс-Воркер\n[Cron Worker]" as CronWorker #LightGray
+}
+
+component "Push Шлюз\n(FCM / APNS)" as Push #LightPink
+component "Мобильное Приложение" as App
+
+' Потоки событий
+EvFlight --> RecEngine : "1. Изменение статуса рейса"
+RecEngine --> EvMitigation : "2. Produce альтернатив"
+EvMitigation --> NotifService : "3. Consume вариантов"
+
+' Пуши
+NotifService --> Push : "4. Push Payload"
+Push --> App : "5. Доставка алертов"
+
+' Фоновые процессы
+CronWorker --> NotifService : "TriggerFeedbackSurvey"
+@enduml

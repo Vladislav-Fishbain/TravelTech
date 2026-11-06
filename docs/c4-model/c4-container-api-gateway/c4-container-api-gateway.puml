@@ -1,0 +1,40 @@
+@startuml
+!pragma layout smetana
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam ranksep 40
+
+title C4 Container Diagram - API Gateway & Client Traffic
+
+package "Client Side" {
+    component "Мобильное Приложение" as App
+}
+
+component "[ API Gateway ]" as GW #LightBlue
+
+package "Backend Services (Синхронные)" {
+    component "Сервис Маршрутов\n[Trip Service]" as TripService #White
+    component "Сервис Бронирования\n[Booking Service]" as BookingService #White
+    component "Сервис Платежей\n[Payment Service]" as PaymentService #White
+}
+
+component "[ Circuit Breaker ]" as CB #Yellow
+component "Внешний API\n(Amadeus / GDS)" as ExtAPI #LightPink
+
+' Маршрутизация
+App --> GW : "HTTP REST"
+GW --> TripService : "POST /trips/{id}/sync\nPOST /trips/{id}/apply-alternative"
+GW --> BookingService : "GET /search\nPOST /bookings"
+
+' Внутреннее взаимодействие
+BookingService --> PaymentService : "Инициация сессии"
+PaymentService ..> App : "Ссылка на веб-оплату"
+PaymentService --> BookingService : "Webhook: PaymentSuccess"
+
+' Выход наружу
+BookingService --> CB : "ExecuteRequest()"
+TripService --> CB : "Запрос аннуляции"
+CB --> ExtAPI
+
+@enduml
