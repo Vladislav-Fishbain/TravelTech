@@ -1,17 +1,26 @@
 openapi: 3.0.3
 info:
-  title: TravelTech Engine ("Alfred") API Specification
+  title: TravelTech Engine API Specification
   version: 1.0.0
+  description: API для синхронизации офлайн-изменений маршрутов и применения альтернативных вариантов поездок.
 servers:
   - url: https://alfredroutes.com
+    description: Production сервер
+
+security:
+  - BearerAuth: []
+
 paths:
   /trips/{trip_id}/sync:
     post:
+      summary: Синхронизация локальных офлайн-изменений
+      description: Отправляет накопленные на мобильном устройстве элементы маршрута, созданные в офлайн-режиме, для идемпотентного слияния с центральной БД.
       operationId: syncOfflineChanges
       parameters:
         - name: trip_id
           in: path
           required: true
+          description: Уникальный идентификатор поездки
           schema:
             type: integer
       requestBody:
@@ -25,12 +34,15 @@ paths:
                 client_sync_timestamp:
                   type: string
                   format: date-time
+                  description: Время отправки синхронизации с клиента
                 device_id:
                   type: string
+                  description: Идентификатор устройства (например, модели смартфона)
                 offline_created_items:
                   type: array
+                  description: Список добавленных в офлайне элементов
                   items:
-                    $ref: './api_schemas.json#/definitions/OfflineCreatedItem'
+                    $ref: '#/components/schemas/OfflineCreatedItem'
             examples:
               StandardSyncRequest:
                 value:
@@ -48,26 +60,37 @@ paths:
                         price_eur: 150.00
       responses:
         '200':
-          description: Sync successful
+          description: Синхронизация успешно завершена
           content:
             application/json:
               schema:
                 type: object
+                properties:
+                  status:
+                    type: string
+                    example: "synchronized"
+                  server_timestamp:
+                    type: string
+                    format: date-time
+                    example: "2026-08-15T10:15:00Z"
               examples:
                 SyncSuccessResponse:
                   value:
                     status: "synchronized"
                     server_timestamp: "2026-08-15T10:15:00Z"
         '401':
-          description: Unauthorized
+          description: Пользователь не авторизован (неверный или отсутствующий JWT-токен)
 
   /trips/{trip_id}/apply-alternative:
     post:
+      summary: Применение альтернативного варианта маршрута
+      description: Выбор предложенной Движком Рекомендаций альтернативы взамен отмененного или задержанного рейса/события.
       operationId: applyAlternativeRoute
       parameters:
         - name: trip_id
           in: path
           required: true
+          description: Уникальный идентификатор поездки
           schema:
             type: integer
       requestBody:
@@ -80,10 +103,13 @@ paths:
               properties:
                 broken_itinerary_item_id:
                   type: integer
+                  description: Идентификатор поврежденного элемента маршрута из таблицы itinerary_items
                 selected_option_id:
                   type: integer
+                  description: Идентификатор выбранного варианта из таблицы alternative_options
                 apply_for_all_group_members:
                   type: boolean
+                  description: Флаг применения альтернативы для всех участников группы
             examples:
               ApplyAlternativeRequest:
                 value:
@@ -92,7 +118,7 @@ paths:
                   apply_for_all_group_members: true
       responses:
         '200':
-          description: Alternative route applied successfully
+          description: Альтернативный маршрут успешно применен и забронирован во внешней GDS
           content:
             application/json:
               schema:
@@ -111,12 +137,44 @@ paths:
                     message: "Itinerary rebuilt successfully. New PNR generated: TXK982"
                     updated_trip_status: "active"
         '422':
-          description: Unprocessable Entity
-security:
-  - BearerAuth: []
+          description: Невалидные данные (например, выбранная опция больше недоступна или заблокирована)
+
 components:
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
+  schemas:
+    OfflineCreatedItem:
+      type: object
+      required: [client_generated_uuid, type, title, start_time, end_time, timezone]
+      properties:
+        client_generated_uuid:
+          type: string
+          format: uuid
+          description: Сгенерированный на клиенте UUID для предотвращения дубликатов при повторных отправках
+        type:
+          type: string
+          enum: [flight, hotel, activity]
+          description: Тип элемента маршрута
+        title:
+          type: string
+          description: Название события или брони
+        start_time:
+          type: string
+          format: date-time
+          description: Время начала в формате ISO 8601 (UTC)
+        end_time:
+          type: string
+          format: date-time
+          description: Время окончания в формате ISO 8601 (UTC)
+        timezone:
+          type: string
+          description: Название тайм-зоны по классификации IANA (например, Europe/Paris)
+          example: "Europe/Paris"
+        metadata:
+          type: object
+          description: Свободные метаданные, сохраняемые в jsonb поле СУБД
+          additionalProperties: true
