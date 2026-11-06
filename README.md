@@ -17,3 +17,7 @@
 * [Процесс 04: Валидация конфликтов и персональный скоринг альтернатив](./docs/architecture/sequences/04_recommendation_engine/04_recommendation_engine.md)
 * [Процесс 05: Уведомления и автоматическое изменение маршрута группы](./docs/architecture/sequences/05_itinerary_re_routing/05_itinerary_re_routing.md)
 * [Процесс 06: Удаление данных по комплаенсу и сбор фидбека](./docs/architecture/sequences/06_compliance_feedback/06_compliance_feedback.md)
+
+### API
+* [API diagram](./docs/architecture/api/api_diagram.md)
+* [API specification](./docs/architecture/api/openapi.yaml)
